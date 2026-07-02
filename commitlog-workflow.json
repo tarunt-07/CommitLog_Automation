@@ -1,0 +1,153 @@
+{
+  "name": "Commitlog",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "github-push",
+        "options": {}
+      },
+      "id": "2487c786-720d-4f23-81e0-bce4c4c94acd",
+      "name": "GitHub Push Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        240,
+        304
+      ],
+      "webhookId": "8927dc47-d409-4677-9252-3720d7082722"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You're a developer sharing a real project update on LinkedIn. Based on the commit message below, write a short, punchy post (under 130 words) about this update.\n\nRules:\n- Sound like a real person typing casually, not a corporate announcement\n- Vary your opening line — don't always start with \"Just shipped\" or \"Excited to announce\"\n- Include one specific, concrete detail from the commit (not generic hype)\n- End with either a forward-looking line or a light, genuine reflection\n- Return ONLY the plain text post — no JSON, no markdown, no quotation marks wrapping the whole thing, no preamble like \"Here's a post:\"\n\nCommit message: {{ $json.body.commits[0].message }}"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "74786417-4640-4db9-a296-81820d03f64d",
+      "name": "Generate LinkedIn Post",
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        464,
+        304
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "EtAIHaiTakIYns9n",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "postAs": "person",
+        "text": "={{ $json.content.parts[0].text }}",
+        "additionalFields": {}
+      },
+      "id": "629928d6-f322-4634-aa94-bde5358f9012",
+      "name": "Post to LinkedIn",
+      "type": "n8n-nodes-base.linkedIn",
+      "typeVersion": 1,
+      "position": [
+        816,
+        304
+      ],
+      "credentials": {
+        "linkedInOAuth2Api": {
+          "id": "cBpBt3eDamEay803",
+          "name": "LinkedIn OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "YOUR_EMAIL@example.com",
+        "subject": "=✅ LinkedIn Post Published - {{ $now.toFormat(\"MMM d, yyyy h:mm a\") }}",
+        "message": "=Post published successfully!\n\nCommit Message:\n{{ $(\"GitHub Push Webhook\").item.json.body.commits[0].message }}\n\nPosted at: {{ $now.toISO() }}\n\nRepository: {{ $(\"GitHub Push Webhook\").item.json.body.repository.full_name }}\n\nLinkedIn Post URL:\nhttps://www.linkedin.com/feed/update/{{ $json.updateKey }}\n\nYou can delete this post from LinkedIn if needed (2 clicks from the post menu).",
+        "options": {}
+      },
+      "id": "4eb22253-854a-49ff-9f27-881f69a05854",
+      "name": "Send Confirmation Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1040,
+        304
+      ],
+      "webhookId": "0596a6d0-896d-4cb6-a56b-127c91749a24",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "JJJ9MSOtzF1kyZbf",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "GitHub Push Webhook": {
+      "main": [
+        [
+          {
+            "node": "Generate LinkedIn Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate LinkedIn Post": {
+      "main": [
+        [
+          {
+            "node": "Post to LinkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post to LinkedIn": {
+      "main": [
+        [
+          {
+            "node": "Send Confirmation Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Confirmation Email": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "b5747038-3aa6-4a2c-8776-0d90c33c6507",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "id": "lBnTIhyBcMShveFC",
+  "tags": []
+}
